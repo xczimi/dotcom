@@ -1,4 +1,4 @@
 dotcom
 ======
 
-xczimidot com website
+xczimi dot com website
