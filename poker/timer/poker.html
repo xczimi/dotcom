@@ -1,0 +1,403 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+   <html lang="en-US"><head>
+
+
+  <title>Home Poker Tool - Texas Hold'em helper</title>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <style type="text/css">
+    body {
+      padding: 0 0 0 0;
+      margin: 0 0 0 0;
+      background-color: white;
+    }
+    #title {
+      position: fixed;
+      left: 0;
+      top: 0;
+      padding: 0 0 0 0;
+      margin: 0 0 0 0;
+      background-color: black;
+      width: 100%;
+      height: 32px;
+      border-bottom: 1px solid darkgray;
+    }
+    #title h1 {
+      margin: 3px 3px 3px 3px;
+      padding: 0 0 0 0;
+      color: white;
+      font-weight: bold;
+      font-size: 32px;
+      font-family: Times;
+    }
+    #menu {
+      position: fixed;
+      border-top: 1px solid white;
+      top: 32px;
+      background-color: gray;
+      width: 100%;
+      height: 24px;
+      font-size: 18px;
+      font-weight: bold;
+      font-family: Arial;
+      padding: 0 0 0 0;
+      margin: 0 0 0 0;
+    }
+    #menu ul {
+     padding: 0 0 0 0;
+     margin: 0 0 0 0;
+    }
+    #menu li {
+      padding: 0 3px 0 3px;
+      margin: 1px 1px 1px 1px;
+      display: inline;
+    }
+    #menu li a {
+      text-decoration: none;
+      color: black;
+    }
+    #menu li a:hover {
+      background-color: #eee;
+    }
+    #menu li a:visited {
+      color: black;
+    }
+    #main {
+      margin-top: 58px;
+      margin-bottom: 35px;
+      color: black;
+      font-size: 12pt;
+      background-color: white;
+      text-align: center;
+      cursor: default;
+    }
+    #stages_div {
+      margin-top: 58px;
+      margin-bottom: 35px;
+      color: black;
+      font-size: 12pt;
+      width: 25%;
+      background-color: gray;
+      text-align: center;
+    }
+    #footer {
+      position: fixed;
+      padding-bottom: 0.2em;
+      bottom: 0;
+      height: 32px;
+      background-color: white;
+      color: black;
+      font-family: Arial;
+      text-align: center;
+      width: 100%;
+    }
+    form.footer {
+     display: inline;
+     position: fixed;
+     bottom: 0;
+     text-align: right;
+     width: 100%;
+     padding: 0 0 0 0;
+     margin: 0 0 0 0;
+    }
+  </style>
+  <script type="text/javascript">
+function xShow(e) {
+	if(!(e=xGetElementById(e)))
+		return;
+	if(e.style){
+		e.style.visibility='visible';
+		}
+}
+function xHide(e) {
+	if(!(e=xGetElementById(e)))
+		return;
+	if(e.style) {
+		e.style.visibility='hidden';
+	}
+}
+function xGetElementById(e) {
+	if(typeof(e)!='string')
+		return e;
+		win=window;
+	if(win.document.getElementById)
+		e=win.document.getElementById(e);
+	else if(win.document.all)
+		e=win.document.all[e];
+	else
+		e=null;
+	return e;
+}
+function timer() {
+  this.start = function() {
+    if(!this.running && !this.paused) {
+      this.started = new Date();
+      this.running = true;
+      this.paused = null;
+      this.elapsed = function() { now = new Date();return this.startedat + (now - this.started); }
+      return true;
+    }
+  }
+  this.pause = function() {
+    if(this.running && this.started){
+      this.running = false;
+      this.paused = new Date();
+      this.elapsed = function() { return this.startedat + (this.paused - this.started); }
+      return true;
+    }
+  }
+  this.jump = function(seconds) {
+    if(!this.running) {
+      this.startedat += seconds*milisec;
+      return true;
+    }
+  }
+  this.resume = function() {
+    if(!this.running && this.paused) {
+      this.running = true;
+      this.startedat = this.elapsed();
+      this.started = new Date();
+      this.elapsed = function() { now = new Date();return this.startedat + (now - this.started); }
+      return true;
+    }
+  }
+  this.stop = function() {
+    this.running = false;
+    this.paused = null;
+    this.startedat=0;
+    this.elapsed = function() { return this.startedat; }
+    return true;
+  }
+  this.stop();
+  this.totalseconds = function() {
+    return Math.floor(this.elapsed()/milisec);
+  }
+  this.display = function() {
+    setInnerHTML('timer_view',this.seconds());
+  }
+}
+var t = new timer();
+displays = new Array();
+
+
+function stage(start, length, info) {
+  this.start = start;
+  this.length = 1*length;
+  this.info = info;
+  this.left = function(now) {
+    return length-now+start;
+  }
+  this.passed = function(now) {
+    return now-start;
+  }
+}
+
+Number.prototype.between = function(a,b) {
+  return this.valueOf() >= a && this.valueOf() < b;
+}
+
+function stages(t) {
+  this.timer=t;
+  this.stages = new Array();
+  this.end = function() {
+    if(0 == this.stages.length) return 0;
+    laststage = this.stages[this.stages.length-1];
+    return laststage.start+laststage.length;
+  }
+  this.addstage = function(length, info) {
+    st = new stage(this.end(),length,info);
+    this.stages.push(st);
+  }
+  this.currentstage = function(current) {
+    for(i in this.stages) {
+      if(current.between(this.stages[i].start,this.stages[i].start+this.stages[i].length)) return this.stages[i];
+    }
+  }
+  this.nextstage = function(current) {
+    for(i in this.stages) {
+      if(current.between(this.stages[i].start,this.stages[i].start+this.stages[i].length)) return this.stages[++i];
+    }
+  }
+  this.display = function() {
+    if(this.timer.running)xHide('stages_div');
+    current = this.timer.totalseconds();
+    if(stg = this.currentstage(current)) {
+      seconds = stg.left(current)%60;
+      minutes = Math.floor(stg.left(current)/60)%60;
+      setInnerHTML('stage_timeleft',((minutes<10?"0":"")+minutes)+":"+((seconds<10?"0":"")+seconds));
+      setInnerHTML('stage_info',stg.info);
+      if(next_stg = this.nextstage(current)) {
+        setInnerHTML('next_stage_info','next: '+next_stg.info);
+      } else {
+        setInnerHTML('next_stage_info','the end.');
+      }
+      setColor('stage_timeleft',this.timer.running?'green':(this.timer.paused?'red':'blue'));
+      l = stg.left(current);
+      if(l<4 && this.timer.running) {
+        stg.ding = setTimeout('ding();',1);
+      }
+    } else {
+      setInnerHTML('stage_timeleft','00:00');
+      setInnerHTML('stage_info','game over');
+      setInnerHTML('next_stage_info','');
+    }
+  }
+  this.skip = function() {
+    current = this.timer.totalseconds();
+    if(stg = this.currentstage(current)) {
+      this.timer.jump(stg.left(current));
+    }
+  }
+  this.again = function() {
+    current = this.timer.totalseconds();
+    if(stg = this.currentstage(current)) {
+      this.timer.jump(-stg.passed(current));
+    }
+  }
+  this.edit_options = function() {
+    xShow('stages_div');
+    f = xGetElementById('stages_form');
+    if(this.stages.length)f.elements['stage_length'].value=Math.floor(this.stages[0].length/MINUTE);
+    f.elements['stage_infos'].value = "";
+    for(i in this.stages) {
+      f.elements['stage_infos'].value += this.stages[i].info + " for " + Math.floor(this.stages[i].length/60) + " min\n";
+    }
+  }
+  this.change_default = function() {
+    f = xGetElementById('stages_form');
+    lines = f.elements['stage_infos'].value.split("\n");
+    for(i=0;i<lines.length;i++) {
+      lines[i] = lines[i].replace(/for [0-9]+ min/gi,"for "+(f.elements['stage_length'].value)+" min");
+    }
+    f.elements['stage_infos'].value = lines.join("\n");
+  }
+  this.done_options = function() {
+    f = xGetElementById('stages_form');
+    lines = f.elements['stage_infos'].value.split("\n");
+    this.stages = new Array();
+    for(i=0;i<lines.length;i++) {
+      exp = /(.+) for ([0-9]+) min/i;
+      if(found = exp.exec(lines[i])) {
+        this.addstage(found[2]*MINUTES,found[1]);
+      }
+    }
+    xHide('stages_div');
+    return false;
+  }
+}
+
+function ding() {
+  if((wmp=xGetElementById('wmp_notify')) && wmp.controls) {
+    wmp.settings.volume = 200;
+    wmp.controls.play();
+  }
+}
+
+var milisec = 1000;
+var MINUTE=MINUTES=60;
+
+displays.display = function() {
+  for(displayed in displays) if(typeof displays[displayed].display == 'function')displays[displayed].display();
+}
+function refresh() {
+  displays.display();
+  setTimeout('refresh()',250);
+}
+var menu = new Object();
+function setInnerHTML(id,content) {if(node=xGetElementById(id)) node.innerHTML = content;}
+function setColor(id,color) {if(node=xGetElementById(id)) node.style.color = color;}
+
+  var myStages = new stages(t);
+//  myStages.addstage(15*MINUTES,'100/100');
+//  myStages.addstage(15*MINUTES,'100/200');
+//  myStages.addstage(15*MINUTES,'200/400');
+//  myStages.addstage(15*MINUTES,'400/800');
+//  myStages.addstage(15*MINUTES,'800/1600');
+//  myStages.addstage(10*MINUTES,'break');
+//  myStages.addstage(15*MINUTES,'1500/3000');
+//  myStages.addstage(15*MINUTES,'3000/6000');
+//  myStages.addstage(15*MINUTES,'5000/10000');
+//  myStages.addstage(15*MINUTES,'10000/20000');
+//  myStages.addstage(15*MINUTES,'20000/40000');
+
+  myStages.addstage(20*MINUTES,'1/2');
+  myStages.addstage(20*MINUTES,'2/4');
+  myStages.addstage(20*MINUTES,'3/6');
+  myStages.addstage(10*MINUTES,'break');
+  myStages.addstage(20*MINUTES,'4/8');
+  myStages.addstage(20*MINUTES,'5/10');
+  myStages.addstage(20*MINUTES,'7/15');
+  myStages.addstage(10*MINUTES,'chip-up');
+  myStages.addstage(20*MINUTES,'10/20');
+  myStages.addstage(20*MINUTES,'15/30');
+  myStages.addstage(20*MINUTES,'20/40');
+  myStages.addstage(10*MINUTES,'break');
+  myStages.addstage(20*MINUTES,'25/50');
+  myStages.addstage(20*MINUTES,'50/100');
+  myStages.addstage(20*MINUTES,'75/150');
+  myStages.addstage(20*MINUTES,'100/200');
+  displays.push(myStages);
+
+function htp_app() {
+
+  this.main_click = function(e) {
+    t.running?t.pause():(t.resume() || t.start());
+    return true;
+  }
+  if(node=xGetElementById('main')) node.onclick=this.main_click;
+  refresh();
+}
+window.onload = function() {var htp = new htp_app();}
+</script>
+</head><body><div id="title"><h1>Home Poker Tool - Timer</h1></div>
+<div id="menu"><ul>
+<li id="menu_start"><a href="javascript:void(t.start());">Start Timer</a></li>
+<li id="menu_stop"><a href="javascript:void(t.stop());">Reset Timer</a></li>
+<li id="menu_pause"><a href="javascript:void(t.pause());">Pause Timer</a></li>
+<li id="menu_resume"><a href="javascript:void(t.resume());">Resume Timer</a></li>
+<li id="menu_skip"><a href="javascript:void(myStages.skip());">Next Level</a></li>
+<li id="menu_again"><a href="javascript:void(myStages.again());">Restart Level</a></li>
+<li id="menu_edit"><a href="javascript:void(!t.running%20&amp;&amp;%20!t.paused%20&amp;&amp;%20myStages.edit_options());">Edit Levels</a></li>
+<li id="menu_league"><a href="league.html">League</a></li>
+</ul></div>
+<div id="stages_div" style="position: absolute; top: 0pt; left: 0pt; display: block; visibility: hidden;">
+<form onsubmit="return false;" name="stages_form" id="stages_form" action="">
+<div>
+<input onchange="myStages.change_default();" value="15" name="stage_length" size="3" maxlength="3"> minutes<br>
+<textarea rows="20" name="stage_infos" cols="25">fsgsdfg</textarea><br>
+<button onclick="javascript:myStages.done_options();">DONE</button><button onclick="javascript:void(myStages.edit_options());">Reset</button>
+</div>
+</form>
+</div>
+<div id="main">
+<!-- object id="wmp_notify" type="application/x-mplayer2" classid="CLSID:6BF52A52-394A-11d3-B153-00C04F79FAA6" height="100" width="100"-->
+	<!-- param name="uiMode" value="none" -->
+
+<div style="margin: 0pt; padding: 0pt; font-size: 160pt; color: blue; font-weight: bold; font-family: Arial;"><div style="color: red;" id="stage_timeleft">14:52</div></div>
+<div style="margin: 0pt; padding: 0pt; font-size: 160pt; color: black; font-weight: bold; font-family: Arial;">
+<div id="stage_info">100/200</div></div>
+<div style="margin: 0pt; padding: 0pt; font-size: 64pt; color: purple; font-family: Arial;"><div id="next_stage_info">100/200</div></div>
+<!-- embed src="notify.wav" width=225 height=25 autostart="false" -->
+<object id="wmp_notify" type="application/x-mplayer2" height="1" width="1" data="ding.wav">
+	<param name="URL" value="ding.wav">
+	<param name="SendPlayStateChangeEvents" value="True">
+	<param name="AutoStart" value="False">
+	<param name="PlayCount" value="1">
+</object>
+</div>
+<div id="footer">© 2008 Peter Czimmermann | xczimi at gmail | <a href="mailto:cases@xczimi.fogbugz.com">problems?</a></div>
+<form class="footer" action="https://www.paypal.com/cgi-bin/webscr" method="post"><div>
+<input name="cmd" value="_s-xclick" type="hidden">
+<input src="poker_files/x-click-but04.gif" name="submit" alt="PayPal - The safer, easier way to pay online!" style="border:0;" type="image">
+<img alt="" src="poker_files/pixel.gif" style="border:0;" height="1" width="1">
+<input name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+" type="hidden"></div></form>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-1530121-4");
+pageTracker._trackPageview();
+} catch(err) {}</script></body></html>

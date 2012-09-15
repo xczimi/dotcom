@@ -1,0 +1,503 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en-US">
+  <head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script>
+    //somehow the Selenium RC firefox doesn't come with a console. haha because its defined by the firebug :)
+    if('undefined' == typeof console) {
+        var console = { log : function(str){ 
+            // enabling debug log for firefox+selenium fails the delete test as its not sophisticated enough.
+//            $('#footer').append("<br />\n"+str); 
+        }}
+    }
+    </script>
+    <!-- Utils -->
+    <script language="javascript" type="text/javascript" src="lib/gears_init.js">
+    </script>
+    <script language="javascript" type="text/javascript" src="lib/uuid.js">
+    </script>
+    <!-- View + UIController -->
+    <script language="javascript" type="text/javascript" src="lib/jquery-1.3.2.js">
+    </script>
+    <script language="javascript" type="text/javascript" src="lib/jquery.json-1.3.min.js">
+    </script>
+    <!-- View templating -->
+    <script language="javascript" type="text/javascript" src="lib/Jtl_1.0-pre.js">
+    </script>
+    <script type="text/javascript">
+
+    // localModel
+
+    var Events = {};
+
+    // jQuery doesn't let me play with Object.prototype
+    // jQuery is for the UI and the control, so avoid using it here
+    // local Model representation
+    var M = (function() {
+        var Model = {
+            O : {},
+            Player : function(ID, name){ 
+                this.name = name || "new Player";
+                this.ID = ID || new UUID();
+                Model.O[this.ID] = this;
+            },
+            Players : []
+        }
+        var Object = function() { 
+            this.__isNew = true;
+            this.markSaved = function() { this.__isNew = false; };
+            this.isNew = function() { return this.__isNew; };
+        }
+        Model.Players.deletePlayer = function(player) {
+                    for(i=0;i<this.length;i++) {
+                        if(this[i] == player) {
+                            this.splice(i,1);
+                        }
+                    }
+                }
+        Model.Players.addPlayer = function(player) {
+            this.push(player);
+        }
+        Model.Players.newPlayer = function(ID, name) {
+            return new Model.Player(ID, name);
+        }
+        Model.Players.find = function(id) { return Model.O[id]; };
+        Model.Player.prototype = new Object;
+        Model.Player.prototype.setName = function(name) {
+            this.name = name;
+        }
+        
+        Model.Player.prototype.toString = function() { return 'Player[name:'+this.name+']/'+this.ID; }
+        
+        // the model reacts to the events and emits read events
+        Model.onEvent = function(event) {
+            if(!event) return 'Model.onEvent';
+            console.log('M.onEvent '+event);
+            switch(event.op) {
+                case 'POST' : 
+                    switch(event.uri.split('/')[0]) {
+                        case 'player' : 
+                            this.modifyPlayer(event);
+                        break;
+                    }
+                    break;
+                case 'DELETE' :
+                    switch(event.uri.split('/')[0]) {
+                        case 'player' : 
+                            this.deletePlayer(event);
+                        break;
+                    }
+                break;
+            }
+        }
+        Model.deletePlayer = function(event) {
+            console.log('M.onDeletePlayer');
+            var ID = event.uri.split('/')[1];
+            var player = this.Players.find(ID);
+            this.Players.deletePlayer(player);
+            M.add(readEvent('player'));
+        };
+        Model.modifyPlayer = function(event) {
+            console.log('M.onModifyPlayer');
+            var ID = event.uri.split('/')[1];
+            var player = this.Players.find(ID);
+            if(!player) {
+                console.log('add new player with '+ID);
+                player = this.Players.newPlayer(ID);
+            }
+            eval('data = ('+event.data+')');
+            player.setName(data.name);
+            if(player.isNew()) {
+                player.markSaved();
+                this.Players.addPlayer(player);
+                M.add(readEvent('player'));
+            } else {
+                M.add(readEvent('player',player));
+            }
+        };
+        return Model;
+    })();
+    
+    // local event storage  in Gears database
+    // sync read    
+    var G = (function(){
+        var Storage = {}
+        // this might need to be an optional step
+        if(window.google && google.gears && google.gears.factory.getPermission('Home Poker Tool')) {
+            Storage.db = google.gears.factory.create('beta.database');
+            Storage.db.open('events');
+            console.log("CREATE TABLE");
+            Storage.db.execute('CREATE TABLE IF NOT EXISTS Events (uuid text, time timestamp, event text);');
+            console.log('database is fine');
+            Storage.onEvent = function(event) { if(!event) return 'Gears'; // name of the watcher
+console.log(event);            
+console.log(typeof event);
+                this.db.execute("INSERT INTO Events (uuid, time, event) VALUES (?,?,?)",[event._ID.toString(), event._time.toString(), $.toJSON(event)]);
+            }
+            Storage.reset = function() {
+                console.log("DROP TABLE")
+                return this.db.execute('DROP TABLE Events');
+            }
+            Storage.read = function() {
+                var rsEvents = this.db.execute("SELECT uuid, time, event FROM Events");
+                while (rsEvents.isValidRow()) {
+                    console.log('read'+[rsEvents.fieldByName('event'),rsEvents.fieldByName('time')]);
+                    eval('var event=('+rsEvents.fieldByName('event')+')');
+                    this.add(event);
+                    rsEvents.next();
+                }
+            }
+        } else {
+            return null;
+        }
+        return Storage;
+    })();
+    
+    // local event storage  in cookies
+    // sync read    
+    var Cookie = {
+        onEvent : function(event) { if(!event) return 'Cookie';
+            console.log('Cookie.onEvent'+event);
+            var expires = new Date();expires.setFullYear(2015,1,1);
+            document.cookie =  'HPTEvent'+event._ID +'='+ escape($.toJSON(event)) + '; expires='+expires.toGMTString();
+        },
+        read : function() { //return;
+            var cookies = document.cookie.split(';');
+            for(var i=0; i<cookies.length; i++) {
+                var cookie = cookies[i].replace( /^\s+|\s+$/g, "" );
+                var cookieName = cookie.split('=')[0];
+                if(cookieName.substring(0,8) == 'HPTEvent') {
+                    var cookieValue = unescape(cookie.substring(cookieName.length+1));
+                    console.log(cookieValue);
+                    eval('var event=('+cookieValue+')');
+                    if(cookieName == 'HPTEvent'+event._ID) {
+                        console.log(event);
+                        Cookie.add(event);
+                        continue;
+                    }
+                }
+                this.expire(cookieName);
+            }
+        },
+        expire : function(cookieName) {
+            document.cookie = cookieName + '=null; expires='+(new Date()).toGMTString();
+        },
+        reset : function() {
+            var cookies = document.cookie.split(';');
+            console.log('Cookie.reset');
+            for(var i=0; i<cookies.length; i++) {
+                var cookie = cookies[i].replace( /^\s+|\s+$/g, "" );
+                var cookieName = cookie.split('=')[0];
+                if(cookieName.substring(0,8) == 'HPTEvent') {
+                    this.expire(cookieName);
+                }
+            }
+            window.location = window.location;
+        }
+    }  
+    // online event storage 
+    // async read    
+    var GAE = {
+      isAccessible : (window.location.protocol != 'file:') || console.log('GAE not available for '+window.location.protocol) && false,
+      onEvent : function(event) { if(!event) return 'GAE';
+        console.log('AJAX.onEvent'+event);
+        if(this.isAccessible) $.ajax({
+          type: 'POST',
+          url: '/rest/event',
+          data: {ID:event._ID,time:event._time,event:$.toJSON(event)},
+          success: function(response, status) {
+            console.log([status,response]);
+          }
+        });
+      },
+      reset : function() {
+        if(this.isAccessible) $.ajax({
+            type: 'DELETE',
+            url: '/rest/event',
+            success: function(response, status) {
+              console.log([status,response]);
+            }
+        });
+      },
+      read : function() {
+        if(this.isAccessible) {
+            $.getJSON('/rest/event',function(json){
+                for(var i=0;i<json.length;i++) {
+                    eval('var event=('+json[i]+')');
+                    GAE.add(event);
+                }
+            });
+        }
+      }
+    }
+    
+    function makeEventQueue(obj, queueName) {
+        obj.__queueName = queueName;
+        obj.__events = {};
+        obj.__watchers__ = [];
+        obj.watchedBy = function(watcher, replay) { 
+            if(typeof watcher.onEvent == 'function') {
+                console.log(this.__queueName+' watched By '+watcher.__queueName);
+            } else return false;
+            this.__watchers__.push(watcher);
+            if(replay) this.replay(watcher);        };
+        obj.add = function(event) {
+                console.log(event);
+            if(event && !this.__events[event._ID]) {
+                console.log('Q['+this.__queueName+'].ADD '+event);
+                this.Event(event);
+                this.__events[event._ID] = event;
+                this.play(event);
+            }
+        }
+        obj.replay = function(watcher) {
+            for(var i in this.__events) {
+                watcher.onEvent(this.__events[i]);
+            }
+        }
+        obj.play = function(event) {
+            for(var i=0;i<this.__watchers__.length;i++) {
+                this.__watchers__[i].onEvent(event);
+            }
+        }
+        obj.Event = function(event) {
+            event._ID = event._ID || (new UUID()).toString();
+            event._time = event._time || Math.round((new Date()).valueOf()/1000);
+        }
+        if(!obj.onEvent) {
+            obj.onEvent = function(event) {
+                this.add(event);
+            }
+        }
+        return obj;
+    };
+
+    function restEvent(op,uri,data) {
+        if(data) {
+            return { op : op || 'GET', uri : uri, data : data };
+        } else {
+            return { op : op || 'GET', uri : uri};
+        }
+    };
+    // this mapping should be defined in the model.
+    function modifyEvent(uri, resource, data) {
+        return restEvent('POST',uri+'/'+resource.ID, data);
+    }
+    function deleteEvent(uri, resource) {
+        return restEvent('DELETE',uri+'/'+resource.ID);
+    }
+    function readEvent(uri, resource) {
+        if(resource) {
+            return restEvent('GET',uri+'/'+resource.ID);
+        }
+        else {
+            return restEvent('GET',uri);
+        }
+    }
+    
+    // View extension
+	// add Jtl to jQuery
+	(function($) {
+		$.extend({
+			jtlTemplate : function(template) {
+				return new Jtl($('#'+template+'Template').html());
+			}
+		});
+		$.fn.extend({
+			jtl : function(template, data) {
+                    return $(this).html($.jtlTemplate(template).render(data));
+			}
+		});
+	})(jQuery);
+    
+    // Controller
+    var C = {
+        playersEditor : {
+            init : function(editor, model) {
+                this.editor = editor;
+                this.players = model.Players;
+                
+                this.render();
+                
+                model.watchedBy(this);
+                
+                editor.addClass('editPlayers');
+                
+                $('.editPlayers form').live('submit',function() {
+                    console.log('submit');
+                    C.playersEditor.saveEdit($(this));
+                    // form handled locally.
+                    return false;
+                });
+                $('.editPlayers .deletePlayer').live('click',function() {
+                    console.log('del');
+                    C.playersEditor.deletePlayer($(this));
+                });
+                // clicking on the players name will start edit mode
+                $('.editPlayers .playerName').live('click',function() {
+                    console.log('click');
+                    C.playersEditor.startEdit($(this));
+                });
+                
+            },
+            onEvent : function(event) {
+                if(!event) return 'Control.onEvent';
+                console.log('C.onEvent'+event);
+                var urisplit = event.uri.split('/');
+                switch(event.op) {
+                    case 'GET' :
+                        switch(urisplit[0]) {
+                            case 'player' : 
+                                if(urisplit.length>1) {
+                                    this.render(urisplit[1]);
+                                    console.log('specific GET '+urisplit);
+                                }
+                                else {
+                                    this.render();
+                                    if(this.clickNewPlayer) {
+                                        $('.editPlayers .playerNode:last .playerName').click();
+                                    }
+                                }
+                            break;
+                        }
+                        break;
+                    break;
+                }
+            },
+            render : function(id) {
+                var playerTemplate = $.jtlTemplate('player');
+                
+                if(undefined == id) {
+                    playerNodes = $.map(this.players, function(player){ return playerTemplate.render(player);});
+                    playerNodes.push(playerTemplate.render(this.players.newPlayer()));
+                    this.editor.jtl('editplayers', {playerNodes:playerNodes});
+                } 
+                else {
+                    $('#edit'+id).parent().jtl('player',M.Players.find(id));
+                }
+            },
+            getPlayerNode : function(node) {
+                while(node && !node.hasClass('playerNode')) node = node.parent();
+                return node;
+            },
+            getEditPlayerNode : function(node) {
+                while(node && !node.attr('id') ) node = node.parent();
+                return node;
+            },
+            // starts editing a players name
+            startEdit : function(node) {
+                console.log('startEdit');
+                var player = this.players.find(node.attr('id'));
+                // render the edit player template and add the blur as blur can't be live
+                this.getPlayerNode(node).jtl('editplayer',player).find('input[name=name]').focus().blur(function() { 
+                    console.log('blur');
+                    C.playersEditor.leaveInput($(this));
+                    return true;
+                });
+            },
+            getEditedPlayer : function(node) {
+                return this.players.find(this.getEditPlayerNode(node).attr('id').substring(4));
+            },
+            getDeletedPlayer : function(node) {
+                console.log(node.attr('id').substring(6))
+                return this.players.find(node.attr('id').substring(6));
+            },
+            leaveInput : function(node) {
+                console.log('leaveInput');
+                if(this.isChangedEdit(node)) {
+                    this.saveEdit(node);
+                } 
+                else {
+                    this.cancelEdit(node);
+                }
+            },
+            isChangedEdit : function(node) {
+                console.log('isChangedEdit');
+                node = this.getEditPlayerNode(node);
+                return node.find('form > input[name=name]').val() != this.getEditedPlayer(node).name;
+            },
+            cancelEdit : function(node) {
+                console.log('cancelEdit');
+                this.getPlayerNode(node).jtl('player',this.getEditedPlayer(node));
+            },
+            saveEdit : function(node) {
+                console.log('saveEdit');
+                var editedPlayer = this.getEditedPlayer(node);
+                if(this.isChangedEdit(node)) {
+                    // evt PLAYER CREATE/UPDATE
+                    var formNode = this.getPlayerNode(node).find('form');
+                    this.clickNewPlayer = editedPlayer.isNew();
+                    Events.add(modifyEvent('player',editedPlayer,$.toJSON({name:formNode.find('input[name=name]').val()})));
+                } else {
+                    this.cancelEdit(node);
+                }
+            },
+            deletePlayer : function(node) {
+                console.log('deletePlayer');
+                var player = this.getDeletedPlayer(node);
+                if(!player.isNew()) {
+                    // evt PLAYER DELETE
+                    Events.add(deleteEvent('player',player));
+                }
+            }
+        }
+    }
+	
+	// document.ready
+    jQuery(function(){
+        if (!G) {
+            console.log('No Google Gears available.');
+            G = Cookie;
+            $('#footer').append(' | Cookies: ON ');
+        } else {
+            $('#footer').append(' | Gears: ON ');
+        }
+        
+        $('.jtlTemplates').hide();
+        console.log('gears checked');
+        
+        makeEventQueue(Events,'EventsQueue');
+        makeEventQueue(M,'ModelQueue');
+        makeEventQueue(G,'localQueue');
+        makeEventQueue(GAE,'globalQueue');
+
+        Events.watchedBy(M,true);
+        
+        GAE.read();
+        G.read();
+        G.watchedBy(Events,true);
+        GAE.watchedBy(Events);
+        Events.watchedBy(G,true);
+        Events.watchedBy(Cookie,true);
+        Events.watchedBy(GAE,true);
+
+        C.playersEditor.init($('#players'),M);
+        
+
+        $('#footer').dblclick(function() { GAE.reset(); Cookie.reset(); G.reset();   });
+	});
+    </script>
+	<style type="text/css">
+    body {
+      padding: 0 0 0 0;
+      margin: 0 0 0 0;
+    }
+    form {
+      margin: 0 0 0 0;
+      padding: 0 0 0 0;
+    }
+	.editPlayers li { height: 20px; }
+	.editPlayers li input { height: 14px; }
+	</style>
+    <title>Home Poker Tool</title>
+  </head>
+  <body>
+	<div id="players">player Editor Initializing...</div>
+	<div id="footer">&copy; 2008 Peter Czimmermann | xczimi at gmail</div>
+	<div id="templates" style="visibility:hidden; height:0px; width:0px;">
+	<div class"jtlTemplate" id="playerTemplate"><span id="{{ID}}" class="playerName">{{name}}</span>{%if not __isNew%}<a id="delete{{ID}}" class="deletePlayer">[X]</a>{%endif%}</div>
+	<div class"jtlTemplate" id="editplayerTemplate"><span id="edit{{ID}}"><form><input name="name" value="{{name}}" type="text"></form></span></div>
+	<div class"jtlTemplate" id="editplayersTemplate"><ul>{%for playerNode in playerNodes%}<li class="playerNode" id="player.{{forloop.counter0}}">{{playerNode}}</li>{%endfor%}</ul></div>
+	</div>
+  </body>
+</html>
