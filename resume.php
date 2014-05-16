@@ -162,7 +162,8 @@ class Person {
 $xczimi = new Person(
   array("Name" => "Peter Czimmermann",
     "Birth" => "1979, Dombóvár, Hungary",
-    "Address" => "Vancouver, BC",
+    "Address" => "23 - 777 Burrard street, Vancouver, BC, Canada V6Z 1X7",
+    "Address" => "Vancouver, BC, Canada",
     "E-mail" => "xczimi@gmail.com%mailto:",
     "Nationality" => "Hungarian",
     "Languages" => "English (fluent), German (basic)"
@@ -205,12 +206,12 @@ Continuous Integration - phpUnderControl, PHPUnit",
 //      "task" => "Meal service registry program for grammar schools (Pascal)"
 //      )
       ),
-  array("Languages: PHP, Javascript, Python, Java, Delphi, C++",
-    "Databases: MySQL, BerkeleyDb (MemcacheDb), MsSQL, PostgreSQL",
-    "VCS: subversion, mercurial, git",
+  array("Languages: PHP, Scala, Javascript, Python, Java, Delphi, C++",
+    "Databases: Couchbase, MySQL, MongoDB, BerkeleyDb (MemcacheDb), MsSQL, PostgreSQL",
+    "VCS: subversion, git",
     "Other: Google App Engine, GNU Make, RPM"
     ),
-    array("poker, travel, basketball, beer"),
+    array("soccer, poker, travel, basketball, beer"),
     array("Hungarian national programming contest (1996) - 8th place")
   );
 
