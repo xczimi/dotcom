@@ -260,14 +260,14 @@ function stages(t) {
     if(this.stages.length)f.elements['stage_length'].value=Math.floor(this.stages[0].length/MINUTE);
     f.elements['stage_infos'].value = "";
     for(i in this.stages) {
-      f.elements['stage_infos'].value += this.stages[i].info + " for " + Math.floor(this.stages[i].length/60) + " min\n";
+      f.elements['stage_infos'].value += this.stages[i].info + " for " + Math.floor(this.stages[i].length/30)/2 + " min\n";
     }
   }
   this.change_default = function() {
     f = xGetElementById('stages_form');
     lines = f.elements['stage_infos'].value.split("\n");
     for(i=0;i<lines.length;i++) {
-      lines[i] = lines[i].replace(/for [0-9]+ min/gi,"for "+(f.elements['stage_length'].value)+" min");
+      lines[i] = lines[i].replace(/for [.0-9]+ min/gi,"for "+(f.elements['stage_length'].value)+" min");
     }
     f.elements['stage_infos'].value = lines.join("\n");
   }
@@ -276,7 +276,7 @@ function stages(t) {
     lines = f.elements['stage_infos'].value.split("\n");
     this.stages = new Array();
     for(i=0;i<lines.length;i++) {
-      exp = /(.+) for ([0-9]+) min/i;
+      exp = /(.+) for ([.0-9]+) min/i;
       if(found = exp.exec(lines[i])) {
         this.addstage(found[2]*MINUTES,found[1]);
       }
