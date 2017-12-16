@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say voice="man">Welcome to Peter and Yanna's residence. Let me check who is home.</Say>
-    <Dial>
-	<Number>778-991-4507</Number>
-	<Number>604-363-4736</Number>
-    </Dial>
+      <Say>Welcome to Yanna and Peter residence. Calling</Say>
+      <Dial>
+          <Number>+16043634736</Number>
+          <Number>+17789914507</Number>
+      </Dial>
 </Response>
