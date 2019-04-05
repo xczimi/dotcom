@@ -30,7 +30,7 @@
 * Custom replication solution from Couchbase into DataWarehouse - in PHP
 * Continuous Integration adoption - phpUnderControl, PHPUnit
 
-## Oldcshool
+## Oldschool
 
 * Automated distributed deployment system for LAMP - GNU make, Red Hat Package Manager (RPM) (cca 2007)
 * High volume mailmerge engine for survey invitations- PHP (direct SMTP) (cca 2002)
