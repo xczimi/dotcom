@@ -12,7 +12,7 @@ class PDF extends FPDF {
     $this->Cell(70, 6, '', 'B', 0, 'C');
     $this->SetFont('Arial', '', 12);
     // $this -> Cell(60, 6, $this -> pageNo() . ". oldal", 'B', 0, 'R');
-    $this->Cell(60, 6, date("Y-m-d"), 'B', 0, 'R'); 
+    $this->Cell(60, 6, '2012 September', 'B', 0, 'R'); 
     // Line break
     $this->Ln(10);
   }
