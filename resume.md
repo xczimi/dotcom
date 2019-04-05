@@ -2,7 +2,7 @@
 
 ## Latest
 
-### Continuous Integration and Continuous Deployment platform 
+### Continuous Integration and Continuous Deployment platform design and implementation
 
 * Infrastructure as Code - serverless.com + AWS CloudFormation
 * Build, Test Automation & Deployment pipeline - AWS CodePipeline, CodeBuild
