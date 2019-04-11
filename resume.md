@@ -25,10 +25,10 @@ _2018-present: Cloud Architect and Software Delivery Engineer_
 
 I was responsible for defining and implementing our "new ways of working" cloud architecture and software delivery platform. I focused on predictability, accessibility and availability. This involved defining our selection of AWS features to support our new serverless and stateful components, including infrastructure and software delivery pipelines. I participated in the various teams staggered over the year to drive the adoption of the new platform. This helped me understand their challenges and adjust the tooling and documentation as we worked together. As a result, we have proper processes and a successful continuous deployment model.
 
-* Infrastructure as Code - serverless.com + AWS CloudFormation
-* Build, Test Automation & Deployment pipeline - AWS CodePipeline, CodeBuild
-* Stateful applications/services with AWS ECS, docker
-* Stateless services with AWS Lambda (Python)
+* Infrastructure as Code - `serverless.com, AWS CloudFormation`
+* Build, Test Automation & Deployment pipeline - `AWS CodePipeline, CodeBuild`
+* Stateful applications/services - `AWS ECS, docker`
+* Stateless services - `AWS Lambda (Python), SNS, API Gateway`
 
 ### Microservices - backend & integration solutions - cloud adoption
 
@@ -38,7 +38,7 @@ _2013-2017: Architect & Technical Lead_
 
 Due to the merge we needed to integrate existing monolith systems as well as open ourselves for new possibilities. I led a team to bootstrap a microservices architecture to serve as the backbone of our core systems as well as provide integration solutions via RESTful APIs. As the microservices matured and our data center infrastructure aged, we started our cloud adoption. This involved introducing and training the team on new technologies such as docker and AWS ECS.
 
-* Scala - Play framework based microservices - RESTful APIs - with Couchbase backend
+* Scala - Play framework based microservices - RESTful APIs - `Scala, Play, Couchbase`
 * Transition/migration into AWS ECS from hosted data center - `docker, ECS, CloudFormation`
 * CI - Build, test automation, config management and deploy - `jenkins, puppet, BDD`
 
@@ -51,12 +51,12 @@ _2004-2007: Team Lead (Hungary)_
 
 I led teams to implement and deliver multiple panel management solutions operated in a SaaS model. Participated in product design and also designed core features to utilize in various high level business features. Thanks to our Scrum Master training and certification we received, I started to focus on test and build automation and repeatable and trusted software delivery processes. Spearheaded the adoption of Continuous Integration, test automation through mentoring and sensible task assignments.
 
-* Web application(s) external and internal - LAMP stack
-* Asynchronous message processing - Q4M
-* Custom replication solution from Couchbase into DataWarehouse - in PHP
-* Behavior Driven Development adoption - behat, Selenium
-* Continuous Integration adoption - phpUnderControl, PHPUnit
-* Fully automated distributed build, deployment and configuration management system for LAMP - GNU make, Red Hat Package Manager (RPM) (cca 2007)
+* Web application(s) external and internal - `LAMP stack`
+* Asynchronous message processing - `Q4M`
+* Custom replication solution from Couchbase into DataWarehouse - `PHP`
+* Behavior Driven Development adoption - `behat, Selenium`
+* Continuous Integration adoption - `phpUnderControl, PHPUnit`
+* Fully automated distributed build, deployment and configuration management system for LAMP - `GNU make, Red Hat Package Manager (RPM)`
 
 _2000-2003: Software Developer (Hungary)_
 
