@@ -79,7 +79,7 @@ https://vancouersouthsiders.ca
 
 _2013-2016_
 
-Designed, implementedand delivered a full software project: research platform for academia (University of Florida)
+Designed, implemented and delivered a full software project: research platform for academia - University of Florida.
 Includes the administrative backend, frontend with Android and iOS apps for sensory data collection
 
 https://mlabresearch.org
