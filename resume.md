@@ -4,7 +4,6 @@
 * **Birth** : 1979, Hungary
 * **Address** : Vancouver, BC, Canada
 * **E-mail** : xczimi@gmail.com
-* **Nationality** : Hungarian
 * **Languages** : English (fluent), Hungarian (native), German (basic)
 
 _Code wins arguments_
@@ -14,8 +13,6 @@ Experienced Senior Developer Team Lead with a demonstrated history of working in
 # Experience
 
 ## Lightspeed Research / Global Market Insite
-
-_2000-present_
 
 ### CI/CD platform design and implementation for AWS
 
@@ -30,7 +27,7 @@ I was responsible for defining and implementing our "new ways of working" cloud 
 * Stateful applications/services - `AWS ECS, docker`
 * Stateless services - `AWS Lambda (Python), SNS, API Gateway`
 
-### Microservices - backend & integration solutions - cloud adoption
+### Microservices - backend & integration - cloud adoption
 
 > GMI/Lightspeed era: sale and merge
 
