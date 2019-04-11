@@ -36,7 +36,7 @@ I was responsible for defining and implementing our "new ways of working" cloud 
 
 _2013-2017: Architect & Technical Lead_
 
-The merge presented us with the need of integration existing monolith systems and open ourselves for ne possibilities. I led a team to bootstrap a microservices architecture to serve as the backbone of our core systems as well as provide integration solutions via RESTful APIs. As the microservices matured and our data center infrastructure aged, we started our cloud adoption. This involved introducing and training team on new technologies such as docker and AWS ECS.
+Due to the merge we needed to integrate existing monolith systems as well as open ourselves for new possibilities. I led a team to bootstrap a microservices architecture to serve as the backbone of our core systems as well as provide integration solutions via RESTful APIs. As the microservices matured and our data center infrastructure aged, we started our cloud adoption. This involved introducing and training the team on new technologies such as docker and AWS ECS.
 
 * Scala - Play framework based microservices - RESTful APIs - with Couchbase backend
 * Transition/migration into AWS ECS from hosted data center - `docker, ECS, CloudFormation`
