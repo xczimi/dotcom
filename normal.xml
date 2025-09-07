@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="man">Welcome to Peter and Yanna's residence. Let me check who is home.</Say>
-    <Record action="/twiliocall.xml" maxLength="5" playBeep="true" method="GET" transcribeCallback="/trans.php"/>
-</Response>

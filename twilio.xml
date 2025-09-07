@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-      <Say>Welcome to Yanna and Peter residence. Calling</Say>
-      <Dial>
-          <Number>+16043634736</Number>
-          <Number>+17789914507</Number>
-      </Dial>
-</Response>
