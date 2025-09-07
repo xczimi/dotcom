@@ -1,45 +1,230 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<!DOCTYPE html>
+<html lang="en"> 
 <head> 
-    <title>xczimi &ndash; Peter Czimmermann</title> 
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
-    <meta name="robots" content="all" /> 
-    <meta name="author" content="Peter Czimmermann" /> 
-    <meta name="description" content="Peter Czimmermann, personal page" /> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xczimi – Peter Czimmermann</title> 
+    <meta name="robots" content="index, follow"> 
+    <meta name="author" content="Peter Czimmermann"> 
+    <meta name="description" content="Peter Czimmermann - Software Engineer, Poker Enthusiast, Sports Fan. Personal portfolio and interests."> 
     <link rel="stylesheet" type="text/css" href="reset-min.css" />
-    <style type="text/css">
-        body { background-color: #fff; font-family: Arial; }
-       .tile { width: 150px; height: 175px; float: left; margin: 5px; font-size: 14pt;  }
-       .square { width: 480px; height: 555px; padding: 5px; }
-       a:visited { color: black; }
-       #a1Square { background-color: #029386; }
-       #b1Square { background-color: #15b01a; }
-       #c1Square { background-color: #f97306; }
-       #a2Square { background-color: #06c2ac; }
-       #b2Square { background-color: #01ff07; }
-       #c2Square { background-color: #fc9744; }
-       #a3Square { background-color: #53fca1; }
-       #b3Square { background-color: #96f97b; }
-       #c3Square { background-color: #ffffff; }
-       
-       .headline { width:100%; background-color: #42A7FA; border-bottom: 2px dashed black; }
-       .headline h1 { font-size: 28pt; font-weight: bold; padding: 5px; }
-       .tile h2 { font-variant: small-caps; font-weight: bold; font-size: 18pt; padding: 2px; margin-bottom: 2px; border-bottom: 1px dashed; }
+    <style>
+        /* Modern CSS Reset and Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+        
+        /* Header */
+        .headline {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .headline h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 700;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Grid Container */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            padding: 0;
+        }
+        
+        /* Tiles */
+        .tile {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .tile h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .tile ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .tile li {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .tile a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .tile a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        
+        /* Tile Colors with Glass Effect */
+        #a1Square { background: rgba(2, 147, 134, 0.7); }
+        #b1Square { background: rgba(21, 176, 26, 0.7); }
+        #c1Square { background: rgba(249, 115, 6, 0.7); }
+        #a2Square { background: rgba(6, 194, 172, 0.7); }
+        #b2Square { background: rgba(255, 255, 255, 0.9); padding: 10px; }
+        #c2Square { background: rgba(252, 151, 68, 0.7); }
+        #a3Square { background: rgba(83, 252, 161, 0.7); }
+        #b3Square { background: rgba(150, 249, 123, 0.7); }
+        #c3Square { background: rgba(1, 255, 7, 0.8); }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                max-width: 400px;
+            }
+            
+            .tile {
+                padding: 15px;
+            }
+            
+            .tile h2 {
+                font-size: 0.9rem;
+            }
+            
+            .tile li {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+                max-width: 300px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .grid-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+            }
+        }
     </style>
 </head>
-<body id="xczimi-com" class="homePage">
-<div class="headline"><h1>xczimi &ndash; Peter Czimmermann</h1></div>
-<div id="square" class="square">
-<div id="a1Square" class="tile"><h2>Bio</h2></div>
-<div id="b1Square" class="tile"><h2>Tech</h2><a href="https://xczimi.github.io">resume</a></div>
-<div id="c1Square" class="tile"><h2>Orange</h2></div>
-<div id="a2Square" class="tile"><h2>Poker</h2></div>
-<div id="b2Square" class="tile"><h2>Sports</h2><ul><li><a href="https://vancouversouthsiders.ca">Southsiders</a></li>
-<li><a href="http://www.whitecapsfc.com">Whitecaps</a></li><li><a href="http://canucks.nhl.com">Canucks</a></li></ul></div>
-<div id="c2Square" class="tile"><h2>Roots</h2></div>
-<div id="a3Square" class="tile"><h2>Social</h2>&lt;SOCIAL&gt;/xczimi</div>
-<div id="b3Square" class="tile"><h2>Blogs</h2><ul><li><a href="http://blog.xczimi.com">Vancouver</a></li></ul></div>
-<div id="c3Square" class="tile"><img src="xczimi.jpg" height="176"></div>
-</div>
+<body>
+    <header class="headline">
+        <h1>xczimi – Peter Czimmermann</h1>
+    </header>
+    
+    <main class="grid-container">
+        <section id="a1Square" class="tile" role="region" aria-label="Bio">
+            <h2>Bio</h2>
+            <p>Software Engineer & Tech Enthusiast</p>
+        </section>
+        
+        <section id="b1Square" class="tile" role="region" aria-label="Technology">
+            <h2>Tech</h2>
+            <a href="https://xczimi.github.io" rel="noopener">Resume</a>
+        </section>
+        
+        <section id="c1Square" class="tile" role="region" aria-label="Projects">
+            <h2>Projects</h2>
+            <p>Personal & Open Source</p>
+        </section>
+        
+        <section id="a2Square" class="tile" role="region" aria-label="Poker">
+            <h2>Poker</h2>
+            <p>Tournament Timer & Tools</p>
+        </section>
+        
+        <section id="b2Square" class="tile" role="img" aria-label="Profile photo">
+            <img src="xczimi.jpg" alt="Peter Czimmermann - Profile Photo">
+        </section>
+        
+        <section id="c2Square" class="tile" role="region" aria-label="Background">
+            <h2>Roots</h2>
+            <p>Canadian in Vancouver</p>
+        </section>
+        
+        <section id="a3Square" class="tile" role="region" aria-label="Social Media">
+            <h2>Social</h2>
+            <p>@xczimi</p>
+        </section>
+        
+        <section id="b3Square" class="tile" role="region" aria-label="Blog">
+            <h2>Blogs</h2>
+            <ul>
+                <li><a href="https://blog.xczimi.com" rel="noopener">Vancouver Life</a></li>
+            </ul>
+        </section>
+        
+        <section id="c3Square" class="tile" role="region" aria-label="Sports">
+            <h2>Sports</h2>
+            <ul>
+                <li><a href="https://vancouversouthsiders.ca" rel="noopener">Southsiders</a></li>
+                <li><a href="https://www.whitecapsfc.com" rel="noopener">Whitecaps</a></li>
+            </ul>
+        </section>
+    </main>
 </body>
