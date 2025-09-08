@@ -41,13 +41,31 @@
         .headline h1 {
             font-size: clamp(1.5rem, 4vw, 2.5rem);
             font-weight: 700;
-            padding: 20px;
+            padding: 20px 20px 5px 20px;
             margin: 0;
             text-align: center;
             background: linear-gradient(45deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+        
+        .headline h2 {
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 400;
+            padding: 0 20px 20px 20px;
+            margin: 0;
+            text-align: center;
+            color: rgba(102, 126, 234, 0.8);
+        }
+
+        .headline h1 pre {
+            display: inline;
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
         
         /* Grid Container */
@@ -121,16 +139,16 @@
             border-radius: 12px;
         }
         
-        /* Tile Colors with Glass Effect */
-        #a1Square { background: rgba(2, 147, 134, 0.7); }
-        #b1Square { background: rgba(21, 176, 26, 0.7); }
-        #c1Square { background: rgba(249, 115, 6, 0.7); }
-        #a2Square { background: rgba(6, 194, 172, 0.7); }
-        #b2Square { background: rgba(255, 255, 255, 0.9); padding: 10px; }
-        #c2Square { background: rgba(252, 151, 68, 0.7); }
-        #a3Square { background: rgba(83, 252, 161, 0.7); }
-        #b3Square { background: rgba(150, 249, 123, 0.7); }
-        #c3Square { background: rgba(1, 255, 7, 0.8); }
+        /* Tile Colors with Glass Effect - Themed */
+        #a1Square { background: rgba(59, 130, 246, 0.8); } /* Professional - Blue */
+        #b1Square { background: rgba(16, 185, 129, 0.8); } /* Tech Projects - Green */
+        #c1Square { background: rgba(239, 68, 68, 0.8); }  /* Poker - Red */
+        #a2Square { background: rgba(220, 38, 127, 0.8); } /* Hungarian - Pink/Red */
+        #b2Square { background: rgba(255, 255, 255, 0.9); padding: 10px; } /* Photo - White */
+        #c2Square { background: rgba(147, 51, 234, 0.8); } /* Travel - Purple */
+        #a3Square { background: rgba(34, 197, 94, 0.8); }  /* Soccer - Green */
+        #b3Square { background: rgba(245, 158, 11, 0.8); } /* Beer & Cycling - Amber */
+        #c3Square { background: rgba(168, 85, 247, 0.8); } /* Social - Purple */
         
         /* Mobile Responsive */
         @media (max-width: 768px) {
@@ -145,6 +163,8 @@
             }
             
             .tile {
+                aspect-ratio: unset;
+                min-height: 120px;
                 padding: 15px;
             }
             
@@ -160,7 +180,20 @@
         @media (max-width: 480px) {
             .grid-container {
                 grid-template-columns: 1fr;
-                max-width: 300px;
+                max-width: 320px;
+            }
+            
+            .tile {
+                aspect-ratio: unset;
+                min-height: 100px;
+                padding: 20px;
+            }
+            
+            .tile img {
+                max-width: 120px;
+                max-height: 120px;
+                width: auto;
+                height: auto;
             }
         }
         
@@ -174,56 +207,71 @@
 </head>
 <body>
     <header class="headline">
-        <h1>xczimi – Peter Czimmermann</h1>
+        <h1><pre>@xczimi</pre></h1>
+        <h2>Peter Czimmermann</h2>
     </header>
     
     <main class="grid-container">
-        <section id="a1Square" class="tile" role="region" aria-label="Bio">
-            <h2>Bio</h2>
-            <p>Software Engineer & Tech Enthusiast</p>
+        <section id="a1Square" class="tile" role="region" aria-label="Professional">
+            <h2>💼 Professional</h2>
+            <p><strong>Software Architect</strong><br/>@ SensorUp</p>
+            <ul>
+                <li><a href="https://xczimi.github.io" rel="noopener">Resume</a></li>
+                <li><a href="https://linkedin.com/in/xczimi" rel="noopener">LinkedIn</a></li>
+            </ul>
         </section>
         
-        <section id="b1Square" class="tile" role="region" aria-label="Technology">
-            <h2>Tech</h2>
-            <a href="https://xczimi.github.io" rel="noopener">Resume</a>
+        <section id="b1Square" class="tile" role="region" aria-label="Tech Projects">
+            <h2>🚀 Tech Projects</h2>
+            <ul>
+                <li><a href="https://ourbuzzer.com" rel="noopener">OurBuzzer.com</a></li>
+                <li><a href="poker/timer/poker.html">Poker Timer</a></li>
+                <li><a href="xpredict/">Soccer Predictor</a></li>
+            </ul>
         </section>
         
-        <section id="c1Square" class="tile" role="region" aria-label="Projects">
-            <h2>Projects</h2>
-            <p>Personal & Open Source</p>
+        <section id="c1Square" class="tile" role="region" aria-label="Poker">
+            <h2>🃏 Poker</h2>
+            <p><strong>Tournament Player</strong></p>
+            <ul>
+                <li><a href="poker/timer/poker.html">Tournament Timer</a></li>
+                <li><a href="https://pokerdb.thehendonmob.com/player.php?a=r&n=941523" rel="noopener">Hendon Mob</a></li>
+            </ul>
         </section>
         
-        <section id="a2Square" class="tile" role="region" aria-label="Poker">
-            <h2>Poker</h2>
-            <p>Tournament Timer & Tools</p>
+        <section id="a2Square" class="tile" role="region" aria-label="Hungarian Roots">
+            <h2>🇭🇺 Hungarian Roots</h2>
+            <p><strong>Magyar Heritage</strong><br/>Now Canadian in Vancouver, BC</p>
         </section>
         
         <section id="b2Square" class="tile" role="img" aria-label="Profile photo">
             <img src="xczimi.jpg" alt="Peter Czimmermann - Profile Photo">
         </section>
         
-        <section id="c2Square" class="tile" role="region" aria-label="Background">
-            <h2>Roots</h2>
-            <p>Canadian in Vancouver</p>
+        <section id="c2Square" class="tile" role="region" aria-label="Travel & Adventure">
+            <h2>🌍 Travel & Adventure</h2>
+            <p><strong>Explorer</strong><br/>Stories & experiences from around the world</p>
         </section>
         
-        <section id="a3Square" class="tile" role="region" aria-label="Social Media">
-            <h2>Social</h2>
-            <p>@xczimi</p>
-        </section>
-        
-        <section id="b3Square" class="tile" role="region" aria-label="Blog">
-            <h2>Blogs</h2>
+        <section id="a3Square" class="tile" role="region" aria-label="Soccer Passion">
+            <h2>⚽ Soccer Passion</h2>
             <ul>
-                <li><a href="https://blog.xczimi.com" rel="noopener">Vancouver Life</a></li>
+                <li><a href="https://vancouversouthsiders.ca" rel="noopener">Southsiders</a></li>
+                <li><a href="https://www.whitecapsfc.com" rel="noopener">Whitecaps FC</a></li>
             </ul>
         </section>
         
-        <section id="c3Square" class="tile" role="region" aria-label="Sports">
-            <h2>Sports</h2>
+        <section id="b3Square" class="tile" role="region" aria-label="Beer & Cycling">
+            <h2>🍺 Beer & Cycling</h2>
+            <p><strong>Vancouver Lifestyle</strong><br/>Craft breweries & bike adventures</p>
+        </section>
+        
+        <section id="c3Square" class="tile" role="region" aria-label="Social Media">
+            <h2>📱 Social</h2>
             <ul>
-                <li><a href="https://vancouversouthsiders.ca" rel="noopener">Southsiders</a></li>
-                <li><a href="https://www.whitecapsfc.com" rel="noopener">Whitecaps</a></li>
+                <li><a href="https://instagram.com/xczimi" rel="noopener">Instagram</a></li>
+                <li><a href="https://facebook.com/xczimi" rel="noopener">Facebook</a></li>
+                <li><a href="https://blog.xczimi.com" rel="noopener">Blog</a></li>
             </ul>
         </section>
     </main>
