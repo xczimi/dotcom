@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">This is sales engineer Gino Valenti. Please hold</Say>
+    <Dial>+12253170090</Dial>
+</Response>

@@ -15,32 +15,40 @@ This is a personal website (xczimi.com) for Peter Czimmermann. It's a simple sta
 
 ## Architecture & Structure
 
-### Main Site Structure
-- `index.html` - Main homepage with tile-based layout using CSS floats
-- `resume.pdf` - Static PDF resume
-- `resume.md` - Markdown version of resume
-- `reset-min.css` - CSS reset styles
-- `xczimi.jpg`, `czimi.jpg` - Profile images
+### Repository Layout
+```
+/dotcom
+├── public/           # All deployable website content
+├── infrastructure/   # OpenTofu/Terraform AWS infrastructure
+├── CLAUDE.md         # This file
+└── README.md
+```
+
+### Main Site Structure (`public/`)
+- `public/index.html` - Main homepage with tile-based layout using CSS floats
+- `public/resume.pdf` - Static PDF resume
+- `public/resume.md` - Markdown version of resume
+- `public/reset-min.css` - CSS reset styles
+- `public/xczimi.jpg`, `public/czimi.jpg` - Profile images
 
 ### Sub-applications
-- `/poker/` - Poker tournament timer and RSVP tools (JavaScript-based)
-  - `/poker/timer/poker.html` - Main poker tournament timer with blinds progression
-  - `/poker/timer/league.html` - League management
-  - `/poker/rsvp.html` - Event RSVP functionality
-- `/xpredict/` - Soccer prediction tools with Facebook Open Graph integration
-- `/canadian/` - Additional content section
-- `/tbbt/` - Additional content section
+- `public/poker/` - Poker tournament timer and RSVP tools (JavaScript-based)
+  - `public/poker/timer/poker.html` - Main poker tournament timer with blinds progression
+  - `public/poker/timer/league.html` - League management
+  - `public/poker/rsvp.html` - Event RSVP functionality
+- `public/xpredict/` - Soccer prediction tools with Facebook Open Graph integration
+- `public/tbbt/` - Additional content section
 
 ### Key Components
 
-#### Main Homepage (`index.html`)
+#### Main Homepage (`public/index.html`)
 - Tile-based grid layout using CSS floats (3x3 grid)
 - Color-coded sections: Bio (teal), Tech (green), Orange, Poker (cyan), Sports (lime), Roots (orange), Social (mint), Blogs (light green), Photo
 - Fixed tile dimensions (150px × 175px) with 5px margins
 - Inline CSS styling with XHTML 1.0 Strict DOCTYPE
 - Links to external resources and sub-sections
 
-#### Poker Timer (`/poker/timer/poker.html`)
+#### Poker Timer (`public/poker/timer/poker.html`)
 - Full-featured tournament timer with JavaScript
 - Configurable blinds progression and breaks
 - Start/pause/resume/reset functionality
@@ -54,23 +62,31 @@ Since this is a simple static website with no build system:
 
 ### Local Development
 ```bash
-# Start a simple HTTP server for testing
-python3 -m http.server 8000
+# Start a simple HTTP server for testing (serve from public/)
+python3 -m http.server 8000 -d public
 
 # Or use PHP if available (though not required)
-php -S localhost:8000
+php -S localhost:8000 -t public
 ```
 
 ### Testing Changes
 - Direct file editing - no compilation needed
-- View main site: Access `index.html` or root directory
+- View main site: Access `http://localhost:8000/`
 - Test poker timer: Navigate to `/poker/timer/poker.html`
 - Test other tools: Navigate to respective subdirectories
 
 ### Deployment
-- Direct file upload/sync to web server
-- No build process required
-- Pure static files - no server-side dependencies
+The site is hosted on AWS S3 + CloudFront. Infrastructure is managed via OpenTofu in `infrastructure/`.
+
+```bash
+# Sync public/ folder to S3
+aws s3 sync public/ s3://xczimi.com
+
+# Invalidate CloudFront cache
+aws cloudfront create-invalidation \
+  --distribution-id $(cd infrastructure && tofu output -raw cloudfront_distribution_id) \
+  --paths "/*"
+```
 
 ## Code Patterns
 
@@ -93,7 +109,7 @@ php -S localhost:8000
 - No external data sources or APIs
 
 ## File Dependencies
-- `reset-min.css` - CSS reset styles
-- Image assets: `xczimi.jpg`, `czimi.jpg` 
-- jQuery libraries in `/poker/timer/lib/` for poker timer functionality
+- `public/reset-min.css` - CSS reset styles
+- Image assets: `public/xczimi.jpg`, `public/czimi.jpg`
+- jQuery libraries in `public/poker/timer/lib/` for poker timer functionality
 - Sound files for timer notifications (`ding.wav`)
