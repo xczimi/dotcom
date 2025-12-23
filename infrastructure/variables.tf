@@ -27,3 +27,9 @@ variable "minimum_protocol_version" {
   type        = string
   default     = "TLSv1.2_2021"
 }
+
+variable "secondary_domain_name" {
+  description = "Secondary domain name (redirects to primary)"
+  type        = string
+  default     = "xczimi.ca"
+}

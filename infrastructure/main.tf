@@ -33,5 +33,6 @@ provider "aws" {
 }
 
 locals {
-  domain_name = var.domain_name
+  domain_name           = var.domain_name
+  secondary_domain_name = var.secondary_domain_name
 }
