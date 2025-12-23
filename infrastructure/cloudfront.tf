@@ -29,7 +29,17 @@ resource "aws_cloudfront_function" "redirect_subdomains" {
       var host = request.headers.host.value;
       var uri = request.uri;
 
-      // Redirect subdomains to main domain
+      // Redirect blog.xczimi.com to xczimi.com/blog/
+      if (host === 'blog.xczimi.com') {
+        var blogPath = '/blog' + (uri === '/' ? '/' : uri);
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: { location: { value: 'https://xczimi.com' + blogPath } }
+        };
+      }
+
+      // Redirect other subdomains to main domain
       if (host !== 'xczimi.com') {
         return {
           statusCode: 301,
