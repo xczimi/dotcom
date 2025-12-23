@@ -20,9 +20,14 @@ import re
 import sys
 import html
 import shutil
+import hashlib
+import urllib.request
+import urllib.error
+import ssl
 from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
+from urllib.parse import urlparse, unquote
 
 # Blogger Atom namespaces (Takeout format)
 NAMESPACES = {
@@ -67,6 +72,10 @@ class TakeoutConverter:
         self.labels = defaultdict(list)
         self.posts_by_year = defaultdict(lambda: defaultdict(list))
         self.images_copied = 0
+        self.images_downloaded = 0
+        self.failed_downloads = []
+        self.image_cache = {}  # URL -> local path mapping
+        self.original_urls = {}  # thumbnail URL -> original URL mapping
 
     def parse_feed(self):
         """Parse the Blogger Atom feed from Takeout."""
@@ -316,31 +325,254 @@ class TakeoutConverter:
         print(f"  Copied {self.images_copied} media files")
 
     def process_post_images(self):
-        """Update image URLs in post content to point to local files."""
-        print("Processing image URLs in posts...")
+        """Collect image URLs and rewrite them to local paths."""
+        print("Processing image URLs...")
 
-        # Build a map of available local images
+        # Ensure images directory exists
         images_dir = self.output_dir / 'images'
-        local_images = set()
-        if images_dir.exists():
-            local_images = {f.name.lower() for f in images_dir.iterdir() if f.is_file()}
+        images_dir.mkdir(parents=True, exist_ok=True)
 
+        # Collect all URLs and rewrite content
         for post in self.posts:
-            post.content = self._update_image_urls(post.content, local_images)
+            post.content = self._rewrite_image_urls(post.content)
 
-    def _update_image_urls(self, content, local_images):
-        """Update blogger image URLs to local paths."""
-        # Pattern for blogger-hosted images
-        patterns = [
-            (r'(src=["\'])https?://[^"\']*blogger\.googleusercontent\.com[^"\']*(["\'])', r'\1/blog/images/\2'),
-            (r'(src=["\'])https?://[^"\']*bp\.blogspot\.com[^"\']*(["\'])', r'\1/blog/images/\2'),
-            (r'(href=["\'])https?://[^"\']*blogger\.googleusercontent\.com[^"\']*(["\'])', r'\1/blog/images/\2'),
-        ]
+        # Generate download script
+        self._generate_download_script()
 
-        # For now, keep remote URLs as they should still work
-        # In future, could match specific filenames to local copies
+        print(f"  Found {len(self.image_cache)} unique image URLs")
+
+    def _rewrite_image_urls(self, content):
+        """Find image URLs and rewrite them to local paths.
+
+        Also extracts original image URLs from <a href="..."><img src="..."> patterns
+        and rewrites both src and href to local paths.
+        """
+        # First pass: find all <a href="image"><img src="thumbnail"> patterns
+        # and collect the original URLs
+        link_img_pattern = r'<a[^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif)[^"\']*)["\'][^>]*>\s*<img[^>]+src=["\']([^"\']+)["\']'
+        for match in re.finditer(link_img_pattern, content, re.IGNORECASE):
+            href_url = match.group(1)
+            img_src = match.group(3)
+            # Store the href as the original for this thumbnail
+            if img_src.startswith('http') and href_url.startswith('http'):
+                if img_src != href_url:  # Only if they're different
+                    self.original_urls[img_src] = href_url
+
+        # Second pass: rewrite all image src attributes
+        img_pattern = r'src=["\']([^"\']+)["\']'
+
+        def replace_image(match):
+            url = match.group(1)
+
+            # Skip non-http URLs, data URLs, and already-local URLs
+            if not url.startswith('http'):
+                return match.group(0)
+            if url.startswith('/blog/'):
+                return match.group(0)
+
+            # Skip YouTube embeds and Google Maps
+            if 'youtube.com' in url or 'maps.google' in url:
+                return match.group(0)
+
+            # Check cache first
+            if url in self.image_cache:
+                return f'src="{self.image_cache[url]}"'
+
+            # Generate local path for this URL
+            local_path = self._get_local_path(url)
+            self.image_cache[url] = local_path
+
+            # If no href-based original found, try pattern matching as fallback
+            if url not in self.original_urls:
+                guessed_original = self._get_original_url(url)
+                if guessed_original:
+                    self.original_urls[url] = guessed_original
+
+            return f'src="{local_path}"'
+
+        content = re.sub(img_pattern, replace_image, content)
+
+        # Third pass: rewrite href attributes that point to original images
+        def replace_href(match):
+            href_url = match.group(1)
+
+            # Skip non-http URLs and already-local URLs
+            if not href_url.startswith('http'):
+                return match.group(0)
+            if href_url.startswith('/blog/'):
+                return match.group(0)
+
+            # Check if this href is an original for any thumbnail we know about
+            for thumb_url, orig_url in self.original_urls.items():
+                if orig_url == href_url:
+                    local_orig_path = self._get_local_path(thumb_url, is_original=True)
+                    return f'href="{local_orig_path}"'
+
+            # Also check if this href URL is directly in our image cache
+            if href_url in self.image_cache:
+                return f'href="{self.image_cache[href_url]}"'
+
+            return match.group(0)
+
+        href_pattern = r'href=["\']([^"\']+\.(jpg|jpeg|png|gif)[^"\']*)["\']'
+        content = re.sub(href_pattern, replace_href, content, flags=re.IGNORECASE)
 
         return content
+
+    def _is_blogger_image(self, url):
+        """Check if URL is a Blogger-hosted image with size parameter."""
+        # Modern Blogger URLs use /s###/ pattern
+        if ('blogger.googleusercontent.com' in url or
+            'blogspot.com' in url or
+            'bp.blogspot.com' in url) and re.search(r'/s\d+/', url):
+            return True
+        # Legacy photos1.blogger.com uses /320/ or /1600/ pattern
+        if 'photos1.blogger.com' in url and re.search(r'/\d{3,4}/', url):
+            return True
+        return False
+
+    def _get_original_url(self, url):
+        """Convert a Blogger thumbnail URL to its original full-size URL.
+
+        Modern Blogger uses /s###/ - /s0/ gives the original.
+        Legacy photos1.blogger.com uses /320/ or /1600/ - /1600/ is the largest.
+        """
+        # Modern Blogger pattern: /s###/ -> /s0/
+        if ('blogger.googleusercontent.com' in url or
+            'blogspot.com' in url or
+            'bp.blogspot.com' in url) and re.search(r'/s\d+/', url):
+            return re.sub(r'/s\d+/', '/s0/', url)
+
+        # Legacy photos1.blogger.com: /320/ -> /1600/
+        if 'photos1.blogger.com' in url:
+            # Only convert if it's a thumbnail (320), not already the large version
+            if '/320/' in url:
+                return url.replace('/320/', '/1600/')
+
+        return None
+
+    def _get_local_path(self, url, is_original=False):
+        """Generate a local path for an image URL."""
+        url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
+
+        # Get extension from URL
+        parsed = urlparse(url)
+        path = unquote(parsed.path)
+        ext_match = re.search(r'\.([a-zA-Z]{3,4})(?:\?|$)', path)
+        if ext_match:
+            ext = ext_match.group(1).lower()
+            if ext == 'jpeg':
+                ext = 'jpg'
+        else:
+            ext = 'jpg'
+
+        # Extract meaningful name
+        name_match = re.search(r'/([^/]+)\.[a-zA-Z]{3,4}(?:\?|$)', path)
+        if name_match:
+            name = re.sub(r'[^a-zA-Z0-9]', '-', name_match.group(1))[:25]
+            suffix = '-orig' if is_original else ''
+            filename = f"{name}-{url_hash}{suffix}.{ext}"
+        else:
+            suffix = '-orig' if is_original else ''
+            filename = f"img-{url_hash}{suffix}.{ext}"
+
+        return f"/blog/images/{filename}"
+
+    def _generate_download_script(self):
+        """Generate a shell script to download all images with curl.
+
+        Downloads both embedded/thumbnail versions AND original full-size
+        versions for Blogger images (which use /s###/ size parameter).
+        """
+        script_path = self.output_dir / 'download-images.sh'
+        images_dir = self.output_dir / 'images'
+
+        # Count total downloads: all thumbnails + originals for Blogger images
+        total_thumbs = len(self.image_cache)
+        total_originals = len(self.original_urls)
+        total = total_thumbs + total_originals
+
+        lines = [
+            '#!/bin/bash',
+            '# Download all blog images (thumbnails + originals)',
+            '# Run this script from the dotcom directory:',
+            '#   bash public/blog/download-images.sh',
+            '',
+            f'cd "{images_dir}"',
+            '',
+            f'TOTAL={total}',
+            'COUNT=0',
+            'SKIPPED=0',
+            'FAILED=0',
+            '',
+            f'echo "Downloading {total_thumbs} thumbnails + {total_originals} originals = $TOTAL images..."',
+            'echo ""',
+            '',
+        ]
+
+        # Download embedded/thumbnail versions
+        for url, local_path in self.image_cache.items():
+            filename = local_path.split('/')[-1]
+            escaped_url = url.replace("'", "'\\''")
+            lines.append(f'''COUNT=$((COUNT + 1))
+if [ -f '{filename}' ]; then
+  SKIPPED=$((SKIPPED + 1))
+  echo "[$COUNT/$TOTAL] SKIP (exists): {filename}"
+elif [ -f '{filename}.failed' ]; then
+  SKIPPED=$((SKIPPED + 1))
+  echo "[$COUNT/$TOTAL] SKIP (failed before): {filename}"
+elif curl -fSL --connect-timeout 10 --max-time 30 -o '{filename}' '{escaped_url}' 2>/dev/null; then
+  echo "[$COUNT/$TOTAL] OK: {filename}"
+else
+  FAILED=$((FAILED + 1))
+  touch '{filename}.failed'
+  echo "[$COUNT/$TOTAL] FAILED: {escaped_url}"
+fi''')
+
+        # Download original full-size versions for Blogger images
+        if self.original_urls:
+            lines.append('')
+            lines.append('echo ""')
+            lines.append(f'echo "--- Downloading {total_originals} original full-size images ---"')
+            lines.append('echo ""')
+
+            for thumb_url, orig_url in self.original_urls.items():
+                orig_local_path = self._get_local_path(thumb_url, is_original=True)
+                filename = orig_local_path.split('/')[-1]
+                escaped_url = orig_url.replace("'", "'\\''")
+                lines.append(f'''COUNT=$((COUNT + 1))
+if [ -f '{filename}' ]; then
+  SKIPPED=$((SKIPPED + 1))
+  echo "[$COUNT/$TOTAL] SKIP (exists): {filename}"
+elif [ -f '{filename}.failed' ]; then
+  SKIPPED=$((SKIPPED + 1))
+  echo "[$COUNT/$TOTAL] SKIP (failed before): {filename}"
+elif curl -fSL --connect-timeout 10 --max-time 60 -o '{filename}' '{escaped_url}' 2>/dev/null; then
+  echo "[$COUNT/$TOTAL] OK: {filename}"
+else
+  FAILED=$((FAILED + 1))
+  touch '{filename}.failed'
+  echo "[$COUNT/$TOTAL] FAILED: {escaped_url}"
+fi''')
+
+        lines.append('')
+        lines.append('echo ""')
+        lines.append('echo "========================================"')
+        lines.append('echo "Download complete!"')
+        lines.append('echo "  Total: $TOTAL"')
+        lines.append(f'echo "    Thumbnails: {total_thumbs}"')
+        lines.append(f'echo "    Originals: {total_originals}"')
+        lines.append('echo "  Skipped (existing): $SKIPPED"')
+        lines.append('echo "  Downloaded: $((TOTAL - SKIPPED - FAILED))"')
+        lines.append('echo "  Failed: $FAILED"')
+        lines.append('echo "========================================"')
+
+        with open(script_path, 'w') as f:
+            f.write('\n'.join(lines))
+
+        os.chmod(script_path, 0o755)
+        print(f"  Generated download script: {script_path}")
+        print(f"    Will download {total_thumbs} thumbnails + {total_originals} originals")
 
     def generate_posts(self):
         """Generate HTML files for all posts."""
@@ -720,14 +952,18 @@ class TakeoutConverter:
         print("CONVERSION COMPLETE")
         print("=" * 50)
         print(f"Posts converted: {len(self.posts)}")
-        print(f"Comments preserved: {sum(len(p.comments) for p in self.posts)}")
-        print(f"Media files copied: {self.images_copied}")
         print(f"Labels: {len(self.labels)}")
+        print(f"Media from Takeout: {self.images_copied}")
+        print(f"External images found: {len(self.image_cache)}")
+        print(f"  - Thumbnails: {len(self.image_cache)}")
+        print(f"  - Originals (Blogger): {len(self.original_urls)}")
+        print(f"  - Total to download: {len(self.image_cache) + len(self.original_urls)}")
         print(f"\nOutput directory: {self.output_dir}")
         print("\nNext steps:")
-        print("1. Test locally: python3 -m http.server 8000 -d public")
-        print("2. Visit http://localhost:8000/blog/")
-        print("3. Deploy to production")
+        print("1. Download images: bash public/blog/download-images.sh")
+        print("2. Test locally: python3 -m http.server 8000 -d public")
+        print("3. Visit http://localhost:8000/blog/")
+        print("4. Deploy to production")
 
     def run(self):
         """Main execution flow."""
