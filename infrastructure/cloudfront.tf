@@ -19,21 +19,44 @@ resource "aws_cloudfront_origin_access_control" "main" {
   signing_protocol                  = "sigv4"
 }
 
-# CloudFront Function to redirect subdomains to main domain
+# CloudFront Function to redirect subdomains and rewrite directory paths
 resource "aws_cloudfront_function" "redirect_subdomains" {
   name    = "redirect-subdomains"
   runtime = "cloudfront-js-2.0"
   code    = <<-EOF
     function handler(event) {
-      var host = event.request.headers.host.value;
+      var request = event.request;
+      var host = request.headers.host.value;
+      var uri = request.uri;
+
+      // Redirect blog.xczimi.com to xczimi.com/blog/
+      if (host === 'blog.xczimi.com') {
+        var blogPath = '/blog' + (uri === '/' ? '/' : uri);
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: { location: { value: 'https://xczimi.com' + blogPath } }
+        };
+      }
+
+      // Redirect other subdomains to main domain
       if (host !== 'xczimi.com') {
         return {
           statusCode: 301,
           statusDescription: 'Moved Permanently',
-          headers: { location: { value: 'https://xczimi.com' + event.request.uri } }
+          headers: { location: { value: 'https://xczimi.com' + uri } }
         };
       }
-      return event.request;
+
+      // Rewrite directory paths to index.html
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+      } else if (!uri.includes('.')) {
+        // Path without extension - add trailing slash and index.html
+        request.uri = uri + '/index.html';
+      }
+
+      return request;
     }
   EOF
 }
