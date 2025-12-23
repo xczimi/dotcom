@@ -1,8 +1,12 @@
 # ACM Certificate for CloudFront (must be in us-east-1)
 resource "aws_acm_certificate" "main" {
-  provider          = aws.us_east_1
-  domain_name       = local.domain_name
-  subject_alternative_names = ["*.${local.domain_name}"]
+  provider    = aws.us_east_1
+  domain_name = local.domain_name
+  subject_alternative_names = [
+    "*.${local.domain_name}",
+    local.secondary_domain_name,
+    "*.${local.secondary_domain_name}"
+  ]
   validation_method = "DNS"
 
   lifecycle {
@@ -76,7 +80,12 @@ resource "aws_cloudfront_distribution" "main" {
   default_root_object = "index.html"
   price_class         = var.price_class
 
-  aliases = [local.domain_name, "*.${local.domain_name}"]
+  aliases = [
+    local.domain_name,
+    "*.${local.domain_name}",
+    local.secondary_domain_name,
+    "*.${local.secondary_domain_name}"
+  ]
 
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]

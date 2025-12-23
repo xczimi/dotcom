@@ -28,3 +28,8 @@ output "website_url" {
   value       = "https://${var.domain_name}"
 }
 
+output "secondary_zone_name_servers" {
+  description = "Name servers for secondary domain (update at registrar)"
+  value       = aws_route53_zone.secondary.name_servers
+}
+
